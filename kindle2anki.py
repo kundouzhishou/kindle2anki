@@ -40,10 +40,11 @@ class Book(object):
 
 class BookWrapper(object):
 
-	def __init__(self, name):
+	def __init__(self, name, fdir):
 		self.__name = name
-		if os.path.exists(name):
-			f = open(name, "rb+")
+		self.__path = fdir + name
+		if os.path.exists(self.__path):
+			f = open(self.__path, "rb+")
 			self.__content = f.read()
 			if len(self.__content) == 0:
 				self.__book = Book(name)
@@ -67,7 +68,7 @@ class BookWrapper(object):
 
 	def dump(self):
 		s = json.dumps(self.__book.dump_json())
-		f = open(self.__book.name,"wb+")
+		f = open(self.__path,"wb+")
 		f.write(s)
 		f.close()
 		print("save : %s" % s)
@@ -82,7 +83,7 @@ class BookWrapper(object):
 
 
 if __name__ == "__main__":
-	b = BookWrapper("test")
+	b = BookWrapper("test", "books/")
 	b.add_word("hehe","ehehe 11",11)
 	# b.add_word("hehe","ehehe 11",11)
 	b.dump()
