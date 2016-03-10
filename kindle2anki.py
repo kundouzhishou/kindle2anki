@@ -4,7 +4,7 @@ import json
 import types
 import os
 
-class Word(object):
+class Highlight(object):
 	def __init__(self, name, usage, time):
 		self.name = name
 		self.usage = usage
@@ -15,7 +15,7 @@ class Word(object):
 
 	@staticmethod
 	def parse_json(data):
-		return Word(data["name"], data["usage"],data["time"])
+		return Highlight(data["name"], data["usage"],data["time"])
 
 class Book(object):
 	def __init__(self, name):
@@ -23,20 +23,56 @@ class Book(object):
 		self.words = []
 
 	def dump_json(self):
-		data = {"name":self.name,"words":[]}
+		data = {"book":self.name,"highlights":[]}
 		for word in self.words:
-			print("add word")
-			data["words"].append(word.dump_json())
+			# print("add word")
+			data["highlights"].append(word.dump_json())
 		return data
 
 	@staticmethod
 	def parse_json(data):
 		b = Book("")
-		b.name = data["name"]
-		for word in data["words"]:
-			w = Word.parse_json(word)
+		b.name = data["book"]
+		for word in data["highlights"]:
+			w = Highlight.parse_json(word)
 			b.words.append(w)
 		return b
+
+class Clipping(object):
+	def __init__(self, name):
+		f = open(name, "rb+")
+		self.highlights = list()
+		book = ""
+		info = ""
+		content = ""
+		index = 0
+		while(True):
+			line = f.readline()
+			line = line.decode("utf-8-sig").encode("utf-8")
+			if len(line) == 0:
+				break
+
+			if "=====" in line:
+				index = 0
+				continue 
+
+			if line in ['\n', '\r\n']:
+				continue
+
+			line = line.strip()
+
+			if index == 0:
+				book = line
+			elif index == 1:
+				info = line
+			elif index == 2:
+				content = line
+
+			if index == 2:
+				self.highlights.append({"book":book,"content":content,"info":info})
+
+			index += 1
+
 
 class BookWrapper(object):
 
@@ -57,13 +93,13 @@ class BookWrapper(object):
 
 		# print("init : %s" % self.__book)
 
-	def add_word(self, name, usage, time):
+	def add_highlight(self, name, usage, info):
 		if self.__contains(name):
 			return
 
-		word = Word(name, usage, time)
+		word = Highlight(name, usage, info)
 		self.__book.words.append(word)
-		print("add word:" + name)
+		# print("add word:" + name)
 
 
 	def dump(self):
@@ -84,6 +120,8 @@ class BookWrapper(object):
 
 if __name__ == "__main__":
 	b = BookWrapper("test", "books/")
-	b.add_word("hehe","ehehe 11",11)
-	# b.add_word("hehe","ehehe 11",11)
+	b.add_highlight("hehe","ehehe 11",11)
+	# b.add_highlight("hehe","ehehe 11",11)
 	b.dump()
+
+	# Clipping("My Clippings.txt")

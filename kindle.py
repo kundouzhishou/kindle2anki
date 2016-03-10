@@ -23,32 +23,35 @@ print(bookinfos)
 cursor.close()
 conn.close()
 
+clipping = k2a.Clipping("My Clippings.txt")
+
 def gen_book(book):
 	bid = book[0]
 	name = book[4]
 	author = book[5]
 	print("bid = %s, name = %s, author = %s" % (bid, name, author))
-
 	book_wrapper = k2a.BookWrapper(name, "books/")
-	for lookup in lookups:
-		l_id = lookup[0]
-		l_name = lookup[1]
-		l_bid = lookup[2]
-		l_usage = lookup[5].replace("ĄŻs",'\'').replace("ĄŽ",'"')
 
-		print(l_id)
-		print(l_name)
-		print(l_bid)
-		print(l_usage)
+	for highlight in clipping.highlights:
+		h_content = highlight["content"]
+		h_book = highlight["book"]
+		h_info = highlight["info"]
 
-		if l_bid == bid:
-			for word in words:
-				w_id = word[0]
-				w_ori = word[2]
-				w_time = word[5]
-				if w_id == l_name:
-					book_wrapper.add_word(w_ori, l_usage, w_time)
-
+		if name not in h_book:
+			continue
+		for word in words:
+			w_id = word[0]
+			w_ori = word[2]
+			w_time = word[5]
+			if w_ori in h_content:
+				for lookup in lookups:
+					l_name = lookup[1]
+					l_bid = lookup[2]
+					l_usage = lookup[5].replace("ĄŻs",'\'').replace("ĄŽ",'"')
+					if l_bid == bid and w_id == l_name:
+						book_wrapper.add_highlight(w_ori, l_usage, h_info)
+			else:
+				book_wrapper.add_highlight(h_content, "", h_info)
 
 	book_wrapper.dump()
 
