@@ -13,6 +13,9 @@ class Highlight(object):
 	def dump_json(self):
 		return {"name":self.name,"usage":self.usage,"time":self.time}
 
+	def dump_anki(self):
+		return "{0}\t{1}\t{2}".format(self.name, self.usage, self.time)
+
 	@staticmethod
 	def parse_json(data):
 		return Highlight(data["name"], data["usage"],data["time"])
@@ -27,6 +30,13 @@ class Book(object):
 		for word in self.words:
 			# print("add word")
 			data["highlights"].append(word.dump_json())
+		return data
+
+	def dump_anki(self):
+		data = ""
+		for word in self.words:
+			data += word.dump_anki() + "\n"
+
 		return data
 
 	@staticmethod
@@ -108,6 +118,11 @@ class BookWrapper(object):
 		f.write(s)
 		f.close()
 		print("save : %s" % s)
+
+		f = open(self.__path + ".k2a", "wb+")
+		f.write(self.__book.dump_anki())
+		f.close()
+
 
 	def __contains(self, name):
 		for word in self.__book.words:
