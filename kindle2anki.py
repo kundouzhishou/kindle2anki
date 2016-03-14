@@ -3,22 +3,24 @@
 import json
 import types
 import os
+import re
 
 class Highlight(object):
-	def __init__(self, name, usage, time):
+	def __init__(self, name, usage, location, time):
 		self.name = name
 		self.usage = usage
 		self.time = time
+		self.location = location
 
 	def dump_json(self):
-		return {"name":self.name,"usage":self.usage,"time":self.time}
+		return {"name":self.name,"usage":self.usage,"time":self.time,"location":self.location}
 
 	def dump_anki(self):
-		return "{0}\t{1}\t{2}".format(self.name, self.usage, self.time)
+		return "{0}\t{1}\t{2}\t{3}".format(self.name, self.usage, self.location, self.time)
 
 	@staticmethod
 	def parse_json(data):
-		return Highlight(data["name"], data["usage"],data["time"])
+		return Highlight(data["name"], data["usage"],data["time"],data["location"])
 
 class Book(object):
 	def __init__(self, name):
@@ -37,6 +39,13 @@ class Book(object):
 		for word in self.words:
 			data += word.dump_anki() + "\n"
 
+		return data
+
+	def dump_html(self):
+		data = ""
+		row = '<tr>\n<th>{0}</th>\n<th>{1}</th>\n<th>{2}</th>\n<th>{3}</th>\n</tr>\n'
+		for word in self.words:
+			data += row.format(word.name,word.usage,word.time,word.location)
 		return data
 
 	@staticmethod
@@ -79,9 +88,27 @@ class Clipping(object):
 				content = line
 
 			if index == 2:
-				self.highlights.append({"book":book,"content":content,"info":info})
+				print(info)
+				self.highlights.append({"book":book,"content":content,"location":self.__get_location(info),"time":self.__get_time(info)})
 
 			index += 1
+
+		print(self.highlights)
+
+	def __get_location(self, info):
+		match = re.search(r'(\w+) \|',info)
+		if match:
+			return match.group(1)
+		else:
+			return ""
+
+
+	def __get_time(self, info):
+		match = re.search(r'\| (.*)',info)
+		if match:
+			return match.group(1)
+		else:
+			return ""
 
 
 class BookWrapper(object):
@@ -89,25 +116,13 @@ class BookWrapper(object):
 	def __init__(self, name, fdir):
 		self.__name = name
 		self.__path = fdir + name
-		if os.path.exists(self.__path):
-			f = open(self.__path, "rb+")
-			self.__content = f.read()
-			if len(self.__content) == 0:
-				self.__book = Book(name)
-			else:
-				json_data = json.loads(self.__content)
-				self.__book = Book.parse_json(json_data)
-			f.close()
-		else:
-			self.__book = Book(name)
+		self.__book = Book(name)
 
-		# print("init : %s" % self.__book)
-
-	def add_highlight(self, name, usage, info):
+	def add_highlight(self, name, usage, location,time):
 		if self.__contains(name):
 			return
 
-		word = Highlight(name, usage, info)
+		word = Highlight(name, usage, location,time)
 		self.__book.words.append(word)
 		# print("add word:" + name)
 
@@ -123,6 +138,12 @@ class BookWrapper(object):
 		f.write(self.__book.dump_anki())
 		f.close()
 
+		f = open(self.__path + ".html", "wb+")
+		tf = open("template.html","rb+")
+		data = tf.read().format(self.__book.dump_html())
+		f.write(data)
+		tf.close()
+		f.close()
 
 	def __contains(self, name):
 		for word in self.__book.words:
@@ -134,9 +155,9 @@ class BookWrapper(object):
 
 
 if __name__ == "__main__":
-	b = BookWrapper("test", "books/")
-	b.add_highlight("hehe","ehehe 11",11)
+	# b = BookWrapper("test", "books/")
 	# b.add_highlight("hehe","ehehe 11",11)
-	b.dump()
+	# b.add_highlight("hehe","ehehe 11",11)
+	# b.dump()
 
-	# Clipping("My Clippings.txt")
+	Clipping("input/My Clippings.txt")
