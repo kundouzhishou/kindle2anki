@@ -12,10 +12,10 @@ conn = sqlite3.connect("input/vocab.db")
 cursor = conn.cursor()
 cursor.execute("select * from words")
 words = cursor.fetchall()
-print(words)
+# print(words)
 cursor.execute("select * from lookups")
 lookups = cursor.fetchall()
-print(lookups)
+# print(lookups)
 cursor.execute("select * from book_info")
 bookinfos = cursor.fetchall()
 print(bookinfos)
@@ -64,10 +64,28 @@ def gen_book(book):
 
 	book_wrapper.dump()
 
+def gen_highlights():
+	books = {}
+	
+	for highlight in clipping.highlights:
+		h_content = highlight["content"]
+		h_book = highlight["book"]
+		h_location = highlight["location"]
+		h_time = highlight["time"]
 
-for book in bookinfos:
-	gen_book(book)
+		if h_book not in books:
+			books[h_book] = k2a.BookWrapper(h_book, "highlights/")
+		book_wrapper = books[h_book]
+		book_wrapper.add_highlight(h_content,"", h_location, h_time)
 
+	for book in books.values():
+		book.dump()
+
+def gen_voc():
+	for book in bookinfos:
+		gen_book(book)
+
+gen_highlights()
 
 print("finish ...")
 
